@@ -5,6 +5,7 @@ from tokenize import group
 from flask import Flask,request,jsonify
 import json
 import requests
+import httpx
 
 
 with open("config.json","r",encoding = 'UTF-8') as f:
@@ -43,7 +44,7 @@ def getGroupName(groupId):
             return groupInfo["data"][i]["group_name"]
 
 @app.route("/",methods=['POST'])
-def recvMsg():
+async def recvMsg():
     data = request.get_data()
     json_data = json.loads(data.decode("utf-8"))
     if json_data["post_type"] == "meta_event":
@@ -54,18 +55,25 @@ def recvMsg():
         msg = msgFormat(json_data["message"])
         print("来自%s的私聊消息:%s"%(nickName,msg))
         if MiPush == "True":
-            requests.post("https://tdtt.top/send",data={'title':nickName,'content':'%s'%(msg),'alias':KEY})
+            await httpx.AsyncClient().post("https://tdtt.top/send",data={'title':nickName,'content':'%s'%(msg),'alias':KEY})
         elif FCM == "True":
-            print(requests.post("https://wirepusher.com/send",data={'id':KEY,'title':nickName,'message':msg,'type':'privateMsg'}).text)
+            await httpx.AsyncClient().post("https://wirepusher.com/send",data={'id':KEY,'title':nickName,'message':msg,'type':'privateMsg'})
     elif json_data["message_type"] == "group":
         groupId = json_data["group_id"]
         groupName = getGroupName(groupId)
         nickName = json_data["sender"]["nickname"]
         msg = msgFormat(json_data["message"])
         if groupId in group_whitelist:
-            print("群聊%s的消息:%s:%s"%(groupName,nickName,msg))
+            if MiPush == "True":
+                await httpx.AsyncClient().post("https://tdtt.top/send",data={'title':'%s'%groupName,'content':'%s:%s'%(nickName,msg),'alias':KEY})
+            if FCM == "True":
+                await httpx.AsyncClient().post("https://wirepusher.com/send",data={'id':'%s'%KEY,'title':groupName,'message':'%s:%s'%(nickName,msg),'type':'groupMsg'})
         elif "[CQ:at,qq=%s]"%userId in msg:
             msg = msg.replace("[CQ:at,qq=%s]"%userId,"[有人@我]")
             print("群聊%s有人@我:%s:%s"%(groupName,nickName,msg))
+            if MiPush == "True":
+                await httpx.AsyncClient().post("https://tdtt.top/send",data={'title':'%s'%groupName,'content':'%s:%s'%(nickName,msg),'alias':KEY})
+            if FCM == "True":
+                await httpx.AsyncClient().post("https://wirepusher.com/send",data={'id':'%s'%KEY,'title':groupName,'message':'%s:%s'%(nickName,msg),'type':'groupMsg'})            
     return "200 OK"
     
