@@ -6,8 +6,13 @@ from flask import Flask,request,jsonify
 import json
 import requests
 
+
+with open("config.json","r",encoding = 'UTF-8') as f:
+    config = json.load(f)
+group_whitelist = config["WhiteList"]
+
 groupInfo = json.loads(requests.get("http://localhost:5700/get_group_list").text)
-userId = json.loads(request.get("/get_login_info").text)["user_id"]
+userId = json.loads(requests.get("http://localhost:5700/get_login_info").text)["data"]["user_id"]
 
 app = Flask(__name__)
 
@@ -50,6 +55,10 @@ def recvMsg():
         groupName = getGroupName(groupId)
         nickName = json_data["sender"]["nickname"]
         msg = msgFormat(json_data["message"])
-        print("来自%s的群聊消息:%s:%s"%(groupName,nickName,msg))
+        if groupId in group_whitelist:
+            print("群聊%s的消息:%s:%s"%(groupName,nickName,msg))
+        elif "[CQ:at,qq=%s]"%userId in msg:
+            msg = msg.replace("[CQ:at,qq=%s]"%userId,"[有人@我]")
+            print("群聊%s有人@我:%s:%s"%(groupName,nickName,msg))
     return "200 OK"
     
