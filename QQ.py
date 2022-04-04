@@ -11,5 +11,9 @@ def recvMsg():
     if json_data["post_type"] == "meta_event":
         if json_data["meta_event_type"] == "heartbeat":
             print("接收心跳信号成功")
-    return "<p>dd</p>"
+    elif json_data["message_type"] == "private":
+        nickName = json_data["sender"]["nickname"]
+        msg = json_data["message"]
+        print("来自%s的私聊消息:%s"%(nickName,msg))
+    return ""
     
