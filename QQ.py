@@ -10,6 +10,9 @@ import requests
 with open("config.json","r",encoding = 'UTF-8') as f:
     config = json.load(f)
 group_whitelist = config["WhiteList"]
+MiPush = config["MiPush"]
+FCM = config["FCM"]
+KEY = config["KEY"]
 
 groupInfo = json.loads(requests.get("http://localhost:5700/get_group_list").text)
 userId = json.loads(requests.get("http://localhost:5700/get_login_info").text)["data"]["user_id"]
@@ -50,6 +53,10 @@ def recvMsg():
         nickName = json_data["sender"]["nickname"]
         msg = msgFormat(json_data["message"])
         print("来自%s的私聊消息:%s"%(nickName,msg))
+        if MiPush == "True":
+            requests.post("https://tdtt.top/send",data={'title':nickName,'content':'%s'%(msg),'alias':KEY})
+        elif FCM == "True":
+            print(requests.post("https://wirepusher.com/send",data={'id':KEY,'title':nickName,'message':msg,'type':'privateMsg'}).text)
     elif json_data["message_type"] == "group":
         groupId = json_data["group_id"]
         groupName = getGroupName(groupId)
