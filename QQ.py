@@ -4,6 +4,11 @@ import json
 from tokenize import group
 from flask import Flask,request,jsonify
 import json
+import requests
+
+groupInfo = json.loads(requests.get("http://localhost:5700/get_group_list").text)
+userId = json.loads(request.get("/get_login_info").text)["user_id"]
+
 app = Flask(__name__)
 
 def msgFormat(msg):
@@ -19,7 +24,15 @@ def msgFormat(msg):
         msg = "[红包]"
     elif "CQ:forward" in msg:
         msg = "[合并转发]"
+    elif "戳一戳" in msg:
+        msg = "戳了你一下"
     return msg
+
+def getGroupName(groupId):
+    length = len(groupInfo["data"])
+    for i in range(length):
+        if groupId == groupInfo["data"][i]["group_id"]:
+            return groupInfo["data"][i]["group_name"]
 
 @app.route("/",methods=['POST'])
 def recvMsg():
@@ -30,12 +43,13 @@ def recvMsg():
             print("接收心跳信号成功")
     elif json_data["message_type"] == "private":
         nickName = json_data["sender"]["nickname"]
-        msg = json_data["message"]
+        msg = msgFormat(json_data["message"])
         print("来自%s的私聊消息:%s"%(nickName,msg))
     elif json_data["message_type"] == "group":
         groupId = json_data["group_id"]
+        groupName = getGroupName(groupId)
         nickName = json_data["sender"]["nickname"]
         msg = msgFormat(json_data["message"])
-        print("来自%s的群聊消息:%s:%s"%(groupId,nickName,msg))
+        print("来自%s的群聊消息:%s:%s"%(groupName,nickName,msg))
     return "200 OK"
     
