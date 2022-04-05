@@ -75,4 +75,7 @@ async def recvMsg():
             if FCM == "True":
                 await httpx.AsyncClient().post("https://wirepusher.com/send",data={'id':'%s'%KEY,'title':groupName,'message':'%s:%s'%(nickName,msg),'type':'groupMsg'})            
     return "200 OK"
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0",port=5000)
     
