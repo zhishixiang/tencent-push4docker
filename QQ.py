@@ -6,16 +6,23 @@ import json
 import requests
 import httpx
 
+try:
+    with open("config.json","r",encoding = 'UTF-8') as f:
+        config = json.load(f)
+    group_whitelist = config["WhiteList"]
+    MiPush = config["MiPush"]
+    FCM = config["FCM"]
+    KEY = config["KEY"]
+except:
+    print("读取配置文件异常,请检查配置文件是否存在或语法是否有问题")
+    assert()
 
-with open("config.json","r",encoding = 'UTF-8') as f:
-    config = json.load(f)
-group_whitelist = config["WhiteList"]
-MiPush = config["MiPush"]
-FCM = config["FCM"]
-KEY = config["KEY"]
-
-groupInfo = json.loads(requests.get("http://localhost:5700/get_group_list").text)
-userId = json.loads(requests.get("http://localhost:5700/get_login_info").text)["data"]["user_id"]
+try:
+    groupInfo = json.loads(requests.get("http://localhost:5700/get_group_list").text)
+    userId = json.loads(requests.get("http://localhost:5700/get_login_info").text)["data"]["user_id"]
+except:
+    print("无法从go-cqhttp获取信息,请检查go-cqhttp是否运行或端口配置是否正确")
+    assert()
 
 app = Flask(__name__)
 
